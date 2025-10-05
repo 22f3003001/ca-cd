@@ -1,0 +1,54 @@
+name: CI with Caching
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Cache dependencies
+        id: cache-step
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache
+            node_modules
+            ~/.npm
+          key: cache-46f3ee6-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            cache-46f3ee6-${{ runner.os }}-
+            cache-46f3ee6-
+      
+      - name: prime-cache-46f3ee6
+        run: |
+          if [ "${{ steps.cache-step.outputs.cache-hit }}" == "true" ]; then
+            echo "Cache hit! The cache was successfully restored."
+          else
+            echo "Cache miss! This is the first run or cache was invalidated."
+          fi
+          echo "Cache hit status: ${{ steps.cache-step.outputs.cache-hit }}"
+      
+      - name: Install dependencies (if cache miss)
+        if: steps.cache-step.outputs.cache-hit != 'true'
+        run: |
+          echo "Installing dependencies..."
+          mkdir -p ~/.cache
+          echo "sample dependency data" > ~/.cache/test.txt
+          echo "Dependencies installed and cached for future runs"
+      
+      - name: Build project
+        run: |
+          echo "Building project..."
+          echo "Build completed successfully!"
+      
+      - name: Run tests
+        run: |
+          echo "Running tests..."
+          echo "All tests passed!"
